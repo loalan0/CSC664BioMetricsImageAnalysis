@@ -1,0 +1,40 @@
+%% Image Analysis for Biometric features
+% Identify points in a frame that correspond the center point of a
+% fish's head by analyzing the intensity characteristics of the larvae. The solution should not
+% depend on threshold values that are manually determined. Investigate the accuracy of your
+% determinations.
+
+%% Acquiring images from file
+%
+
+location = 'C:\Users\Alan\Documents\MATLAB\zebraFish\frames_grey\*.png';
+ds = imageDatastore(location);
+img = read(ds);
+imshow(img);
+
+%% Convert Image to Grayscale
+% Despite the image already being in grayscale, matlab still considers the
+% image an rgb even though the rgb values are all the same within each
+% pixel. Converting the to grayscale gets rid of the rgb and allows the
+% usage of functions that require grayscale images.
+
+grayimg = im2gray(img);
+
+%% Cropping out unnecessary pixels.
+%
+targetSize = [256,256];
+win1 = centerCropWindow2d(size(grayimg),targetSize);
+
+cropimg = imcrop(targetSize,win1);
+imshow(cropimg);
+%% Examining intensity values
+% Using imhist function on the grayimg in order to see the intensity value
+% distribution of the grayscale image.
+
+figure('Name','grayimg histogram'), imhist(grayimg);
+title("Adjusted histogram");
+
+%% Thresholding the image
+% Using thresholding in an attempt to separate the fishes from the
+% background.
+
