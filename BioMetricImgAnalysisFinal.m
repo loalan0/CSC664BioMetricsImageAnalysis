@@ -14,7 +14,7 @@ numimages = length(theFiles);
 % the loop and add to a montage of images
 
 % for i = 1:1
-    i = 100;
+    i = 1;
     baseFileName = theFiles(i).name;
     fullFileName = fullfile(theFiles(i).folder, baseFileName);
     img = imread(fullFileName);
@@ -22,6 +22,7 @@ numimages = length(theFiles);
     
     imtool(img);
 % end
+
 %% Convert Image to Grayscale
 % Despite the image already being in grayscale, matlab still considers the image 
 % an rgb even though the rgb values are all the same within each pixel. Converting 
@@ -29,26 +30,8 @@ numimages = length(theFiles);
 % require grayscale images.
 
 grayimg = im2gray(img);
-
-% increase contrast of the image
-grayimg = imadjust(grayimg);
 imshow(grayimg);
-imtool(grayimg);
-%% Examining intensity values
-% Using imhist function on the grayimg in order to see the intensity value distribution 
-% of the grayscale image.
 
-figure('Name','grayimg histogram'), imhist(grayimg);
-title("Intensity values histogram");
-
-
-
-%% Intersection of matrices
-% Using the intersection function to find the objects within the first image 
-% that are in the same coordinates as the second image. This should get rid of 
-% the lines from the body and only keep the eyes as objects.
-
-% intersectionOfimgbw = intersect(labelopenimg, labelBW);
 %% Edge Detection
 % Using edge detection to see if it helps separate the fish from the background.
 
