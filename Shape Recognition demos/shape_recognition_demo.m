@@ -1,10 +1,9 @@
-% Demo to find certain shapes in an image based on their shape (circularities) and number of vertices.
-function shape_recognition_demo1
+function shape_recognition_demo
 try
 	clc; % Clear the command window.
 	close all; % Close all figures (except those of imtool.)
 	workspace; % Make sure the workspace panel is showing.
-	fontSize = 15;
+	fontSize = 20;
 	
 	% For reference, compute the theoretical circularity of a bunch of regular polygons
 	% with different number of sides starting with 3 (triangle).
@@ -15,7 +14,7 @@ try
 	dividingValues(end) = inf;
 	
 	% Now create a demo image.
-	[binaryImage, numSidesCircularity] = CreateDemoImage();
+	[binaryImage, numSides] = CreateDemoImage();
 	% Count the number of shapes
 	[~, numShapes] = bwlabel(binaryImage);
 	
@@ -30,36 +29,36 @@ try
 	% Enlarge figure to full screen.
 	set(gcf, 'Units', 'Normalized', 'OuterPosition', [0 0 1 1]);
 	% Get rid of tool bar and pulldown menus that are along top of figure.
-% 	set(gcf, 'Toolbar', 'none', 'Menu', 'none');
+	set(gcf, 'Toolbar', 'none', 'Menu', 'none');
 	% Give a name to the title bar.
 	set(gcf, 'Name', 'Demo by ImageAnalyst', 'NumberTitle', 'Off')
 	drawnow; % Make it display immediately.
 	
 	[labeledImage, numberOfObjects] = bwlabel(binaryImage);
 	blobMeasurements = regionprops(labeledImage, 'Perimeter', 'Area', 'Centroid', 'Image');
-	
-	% Now compute the number of vertices by looking at the number of peaks in a plot of distance from centroid.
-	numSidesDistance = FindNumberOfVertices(blobMeasurements, labeledImage);
-	
 	% Get all the measurements into single arrays for convenience.
 	allAreas = [blobMeasurements.Area];
 	allPerimeters = [blobMeasurements.Perimeter];
 	circularities = (4 * pi *  allAreas) ./ allPerimeters.^2
 	% Sort in order of increasing circularity
 	[sortedCircularities, sortOrder] = sort(circularities, 'Ascend');
-	% Sort all the measurements in the same way.
+	% Sort the centroids in the same way.
 	blobMeasurements = blobMeasurements(sortOrder);
 	allAreas = allAreas(sortOrder);
 	allPerimeters = allPerimeters(sortOrder);
-	numSidesDistance = numSidesDistance(sortOrder);
-	
 	% Plot a bar chart of the circularities.
 	subplot(1, 2, 2);
 	bar(sortedCircularities);
 	ylim([0.55, 1.1]);
 	grid on;
 	title('Actual Measured Circularities', 'FontSize', fontSize);
-	
+	% Make tick marks every 0.1
+	ax = gca;
+	ax.YTick = 0.6 : 0.02 : 1.2;
+	ax.YAxis.TickLabelFormat = '%.2f';
+	% Make a blue line at a Y level of 1.0 - the perfect circle level.
+	line(xlim, [1,1], 'Color', 'b', 'LineWidth', 2);
+
 	% Let's compute areas a different way.  The "Area" returned by regionprops is a count of the number of pixels.
 	% This sometimes overestimates the area.  Let's use bwarea, which computes the area on a
 	% pixel-center to pixel center basis.
@@ -73,8 +72,8 @@ try
 	% Put up red horizontal lines at the dividing values
 	hold on;
 	xl = xlim();
-	for k = 1 : length(numSidesCircularity)-1
-		thisSideLength = numSidesCircularity(k);
+	for k = 1 : length(numSides)-1
+		thisSideLength = numSides(k);
 		thisDividingValue = dividingValues(thisSideLength);
 		line(xl, [thisDividingValue, thisDividingValue], 'Color', 'r');
 		% For the first 6, print the dividing value at the left just above the line.
@@ -93,75 +92,37 @@ try
 	% Say what they are, one by one.
 	subplot(1, 2, 1);
 	for blobNumber = 1 : numberOfObjects
-		%==============================================================
-		% Determine the number of sizes according to the circularity
 		% Get the circularity of this specific blob.
 		thisCircularity = sortedCircularities(blobNumber);
 		% See which theoretical dividing value it's less than.
 		% This will determine the number of sides it has.
-		numSidesCircularity = find(thisCircularity < dividingValues, 1, 'first');
-		% Assign a string naming the shape according to the distance algorithm.
-		if numSidesCircularity == 3
+		numSides = find(thisCircularity < dividingValues, 1, 'first');
+		if numSides == 3
 			% Blob has 3 sides.
-			theShapeCirc = 'triangle';
-		elseif numSidesCircularity == 4
+			theShape = 'triangle';
+		elseif numSides == 4
 			% Blob has 4 sides.
-			theShapeCirc = 'square';
-		elseif numSidesCircularity == 5
+			theShape = 'square';
+		elseif numSides == 5
 			% Blob has 5 sides.
-			theShapeCirc = 'pentagon';
-		elseif numSidesCircularity == 6
+			theShape = 'pentagon';
+		elseif numSides == 6
 			% Blob has 6 sides.
-			theShapeCirc = 'hexagon';
+			theShape = 'hexagon';
 		else
 			% Blob has 7 or more sides.
-			theShapeCirc = 'nearly circular';
-		end		
-		
-		%==============================================================
-		% Determine the number of sides according to the centroid-to-perimeter algorithm
-		% Classify the shape by the centroid-to-perimeter algorithm which seems to be more accurate than the circularity algorithm.
-		numSidesDist = numSidesDistance(blobNumber);
-		% Assign a string naming the shape according to the distance algorithm.
-		if numSidesDist == 3
-			% Blob has 3 sides.
-			theShapeDistance = 'triangle';
-		elseif numSidesDist == 4
-			% Blob has 4 sides.
-			theShapeDistance = 'square';
-		elseif numSidesDist == 5
-			% Blob has 5 sides.
-			theShapeDistance = 'pentagon';
-		elseif numSidesDist == 6
-			% Blob has 6 sides.
-			theShapeDistance = 'hexagon';
-		else
-			% Blob has 7 or more sides.
-			theShapeDistance = 'nearly circular';
-		end		
-		
+			theShape = 'nearly circular';
+		end
 		% Place a label on the shape
 		xCentroid = blobMeasurements(blobNumber).Centroid(1);
 		yCentroid = blobMeasurements(blobNumber).Centroid(2);
-		blobLabel = sprintf('#%d = %s', blobNumber, theShapeDistance);
 		plot(xCentroid, yCentroid, 'r+', 'LineWidth', 2, 'MarkerSize', 15);
-		text(xCentroid+20, yCentroid, blobLabel, 'FontSize', fontSize, 'Color', 'r', 'FontWeight', 'Bold');
-
+		text(xCentroid+20, yCentroid, theShape, 'FontSize', fontSize, 'Color', 'r', 'FontWeight', 'Bold');
 		% Inform the user what the circularity and shape are.
-		distanceMessage = sprintf('The centroid-to-perimeter algorithm predicts shape #%d has %d sides, so it predicts the shape is a %s', blobNumber, numSidesDistance(blobNumber), theShapeDistance);
-		circMessage = sprintf('The circularity of object #%d is %.3f, so the circularity algorithm predicts the object is a %s shape.\nIt is estimated to have %d sides.\n(Range for %s is [%.4f - %.4f].)',...
-			blobNumber, thisCircularity, theShapeCirc, numSidesCircularity, ...
-			theShapeDistance, dividingValues(numSidesCircularity - 1), dividingValues(numSidesCircularity));
-		% See if the number of sides determined each way agrees with each other.
-		if numSidesDistance(blobNumber) == numSidesCircularity
-			agreementMessage = sprintf('For blob #%d, the two algorithms agree on %d sides.', blobNumber, numSidesCircularity);
-		else
-			agreementMessage = sprintf('For blob #%d there is disagreement.', blobNumber);
-		end
-		% Combine all messages into one.
-		promptMessage = sprintf('%s\n\n%s\n\n%s', distanceMessage, circMessage, agreementMessage);
+		promptMessage = sprintf('\nThe circularity of object #%d is %.3f, so the object is a %s shape.\nIt is estimated to have %d sides.\n(Range for %s is [%.4f - %.4f].)',...
+			blobNumber, thisCircularity, theShape, numSides, ...
+			theShape, dividingValues(numSides - 1), dividingValues(numSides));
 		fprintf('%s\n', promptMessage);
-		
 		% Give user an opportunity to bail out if they want to.
 		titleBarCaption = 'Continue?';
 		button = questdlg(promptMessage, titleBarCaption, 'Continue', 'Quit', 'Continue');
@@ -181,7 +142,7 @@ end
 % Creates an image with a specified number of circles, triangles, rectangles, and pentagons
 function [binaryImage, numSides] = CreateDemoImage()
 try
-	rows = 800;
+	rows = 2048;
 	columns = round(rows * 3/4); % 4/3 aspect ratio.
 	figure;
 	
@@ -190,7 +151,7 @@ try
 	numShapesToPlace = 3;
 	for numSides = 3 : 6
 		shapesPlacedSoFar = 0;
-		centroidToVertexDistance = [30, 75];
+		centroidToVertexDistance = [.04*rows, 0.1*rows];
 		% Define fail-safe parameters.
 		maxNumberOfAttempts = 50;
 		numberOfAttempts = 0;
@@ -218,7 +179,7 @@ try
 	numShapesToPlace = 3;
 	shapesPlacedSoFar = 0;
 	numSides = 30; % Pretty round
-	centroidToVertexDistance = [30, 75];
+	centroidToVertexDistance = [.04*rows, 0.1*rows];
 	while shapesPlacedSoFar < numShapesToPlace && numberOfAttempts < maxNumberOfAttempts
 		thisBinaryImage = CreatePolygon(numSides, centroidToVertexDistance, rows, columns);
 		% See if any pixels in this binary image overlap any existing pixels.
@@ -337,10 +298,11 @@ try
 	% Plot theoretical lines in dark red.
 	darkRed = [0.85, 0, 0];
 	for k = 1 : length(numSides)
+		thisSideLength = numSides(k);
 		% Make theoretical line on the plot in a magenta color.
 		line(xl, [circularity(k), circularity(k)], 'Color', darkRed, 'LineWidth', 2);
 		fprintf('     %d                  %f\n', thisSideLength, circularity(k));
-		if k < 7 % Only print text if it's not too crowded and close together.
+		if k <= 7 % Only print text if it's not too crowded and close together.
 			% Make text with the true value
 			message = sprintf('Theoretical value for %d sides = %.4f', thisSideLength, circularity(k));
 			text(xl(1)+0.1, circularity(k) + 0.005, message, 'Color', darkRed);
@@ -351,7 +313,7 @@ try
 	% Enlarge figure to full screen.
 	set(gcf, 'Units', 'Normalized', 'OuterPosition', [0 0 1 1]);
 	% Get rid of tool bar and pulldown menus that are along top of figure.
-% 	set(gcf, 'Toolbar', 'none', 'Menu', 'none');
+	set(gcf, 'Toolbar', 'none', 'Menu', 'none');
 	% Give a name to the title bar.
 	set(gcf, 'Name', 'Demo by ImageAnalyst', 'NumberTitle', 'Off')
 	drawnow; % Make it display immediately.
@@ -359,6 +321,11 @@ try
 	title('Theoretical Circularities', 'FontSize', fontSize, 'Interpreter', 'None');
 	xlabel('Number of Sides', 'FontSize', fontSize);
 	ylabel('True Circularity', 'FontSize', fontSize);
+	% Make tick marks every 0.1
+	ax = gca;
+	ax.XTick = 2 : 16;
+	ax.YTick = 0.6 : 0.02 : 1.2;
+	ax.YAxis.TickLabelFormat = '%.2f';
 	
 	% Get the midpoint between one circularity and the one for the next higher number of sides.
 	dividingValues = conv(circularity, [1, 1]/2, 'valid');
@@ -378,7 +345,7 @@ try
 		thisSideLength = numSides(k);
 		thisDividingValue = dividingValues(thisSideLength);
 		h = line(xl, [thisDividingValue, thisDividingValue], 'Color', darkGreen, 'LineWidth', 2, 'LineStyle', '--');
-		% 		h.LineStyle = '--';
+% 		h.LineStyle = '--';
 		% For the first 6, print the dividing value at the left just above the line.
 		% After 6 it would get too crowded
 		if k <= 6
@@ -394,93 +361,3 @@ catch ME
 	uiwait(warndlg(errorMessage));
 end
 
-% Now compute the number of vertices by looking at the number of peaks in a plot of distance from centroid.
-function numVertices = FindNumberOfVertices(blobMeasurements, labeledImage)
-try
-	numVertices = 0; % Initialize.
-	% Get the number of blobs in the image.
-	numRegions = length(blobMeasurements);
-	hFig = figure;
-	promptUser = true; % Let user see the curves.
-	
-	% For each blob, get its boundaries and find the distance from the centroid to each boundary point.
-	for k = 1 : numRegions
-		% Extract just this blob alone.
-		thisBlob = ismember(labeledImage, k) > 0;
-		if promptUser % Let user see the image.
-			cla;
-			imshow(thisBlob);
-		end
-		% Find the boundaries
-		thisBoundary = bwboundaries(thisBlob);
-		thisBoundary = cell2mat(thisBoundary); % Convert from cell to double.
-		% Get x and y
-		x = thisBoundary(:, 2);
-		y = thisBoundary(:, 1);
-		% Get the centroid
-		xCenter = blobMeasurements(k).Centroid(1);
-		yCenter = blobMeasurements(k).Centroid(2);
-		% Compute distances
-		distances = sqrt((x - xCenter).^2 + (y - yCenter).^2);
-		if promptUser % Let user see the curves.
-			% Plot the distances.
-			plot(distances, 'b-', 'LineWidth', 3);
-			grid on;
-			message = sprintf('Centroid to perimeter distances for shape #%d', k);
-			title(message, 'FontSize', 15);
-			% Scale y axis
-			yl = ylim();
-			ylim([0, yl(2)]); % Set lower limit to 0.
-		end
-		
-		% Find the range of the peaks
-		peakRange = max(distances) - min(distances);
-		minPeakHeight = 0.5 * peakRange;
-		% Find the peaks
-		[peakValues, peakIndexes] = findpeaks(distances, 'MinPeakProminence', minPeakHeight);
-		% Find the valueys.
-		[valleyValues, valleyIndexes] = findpeaks(-distances, 'MinPeakProminence', minPeakHeight);
-		numVertices(k) = max([length(peakValues), length(valleyValues)]);
-		% Circles seem to have a ton of peaks due to the very small range and quanitization of the image.
-		% If the number of peaks is more than 10, make it zero to indicate a circle.
-		if numVertices(k) > 10
-			numVertices(k) = 0;
-		end
-		
-		if promptUser % Let user see the curves.
-			% Plot the peaks.
-			hold on;
-			plot(peakIndexes, distances(peakIndexes), 'r^', 'MarkerSize', 10, 'LineWidth', 2);
-			
-			% Plot the valleys.
-			hold on;
-			plot(valleyIndexes, distances(valleyIndexes), 'rv', 'MarkerSize', 10, 'LineWidth', 2);
-			
-			message = sprintf('Centroid to perimeter distances for shape #%d.  Found %d peaks.', k, numVertices(k));
-			title(message, 'FontSize', 20);
-			
-			% The figure un-maximizes each time when we call cla, so let's maximize it again.
-			% Set up figure properties:
-			% Enlarge figure to full screen.
-			set(gcf, 'Units', 'Normalized', 'OuterPosition', [0 0 1 1]);
-			% Get rid of tool bar and pulldown menus that are along top of figure.
-% 			set(gcf, 'Toolbar', 'none', 'Menu', 'none');
-			% Give a name to the title bar.
-			set(gcf, 'Name', 'Demo by ImageAnalyst', 'NumberTitle', 'Off')
-			
-			% Let user see this shape's distances plotted before continuing.
-			promptMessage = sprintf('Do you want to Continue processing,\nor Cancel processing?');
-			titleBarCaption = 'Continue?';
-			button = questdlg(promptMessage, titleBarCaption, 'Continue', 'Cancel', 'Continue');
-			if strcmpi(button, 'Cancel')
-				promptUser = false;
-			end
-		end
-	end
-	close(hFig);
-catch ME
-	errorMessage = sprintf('Error in function %s() at line %d.\n\nError Message:\n%s', ...
-		ME.stack(1).name, ME.stack(1).line, ME.message);
-	fprintf(1, '%s\n', errorMessage);
-	uiwait(warndlg(errorMessage));
-end

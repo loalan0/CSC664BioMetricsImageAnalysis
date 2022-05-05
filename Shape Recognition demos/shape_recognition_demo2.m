@@ -5,6 +5,12 @@ imtool close all;  % Close all imtool figures.
 clear;  % Erase all existing variables.
 workspace;  % Make sure the workspace panel is showing.
 fontSize = 20;
+% 
+% grayfishds = imageDatastore("zebraFish\frames_grey", "FileExtensions",".png", "LabelSource","foldernames");
+% numObs = length(grayfishds.Labels);
+% 
+% img = readimage(grayfishds, 1);
+
 
 % Read in a standard MATLAB gray scale demo image.
 % Let's let the user select from a list of all the demo images that ship with the Image Processing Toolbox.
@@ -26,6 +32,9 @@ end
 
 % Read in image into an array.
 rgbImage = imread(fullFileName);
+
+% rgbImage = img;
+
 [rows, columns, numberOfColorBands] = size(rgbImage);
 % Display it.
 subplot(2, 2, 1);
