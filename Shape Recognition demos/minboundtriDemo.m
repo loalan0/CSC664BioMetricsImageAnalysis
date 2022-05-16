@@ -1,7 +1,10 @@
  x = randn(50,1);
  y = randn(50,1);
  [tx,ty] = minboundtri(x,y);
- plot(x,y,'ro',tx,ty,'b-');
+ x_center = mean(x);
+ y_center = mean(y);
+
+ plot(x,y,'ro',tx,ty,'b-',x_center,y_center,'go');
 
 function [trix,triy] = minboundtri(x,y)
 % minboundtri: Compute the minimum area bounding triangle of points in the plane
